@@ -32,7 +32,7 @@ Vagrant.configure("2") do |config|
     end    
     app.vm.provision "ansible" do |ansible|
         ansible.playbook = "provisioning/playbook.yml"
-        ansible.verbose = 'vvv'
+        #ansible.verbose = 'vvv'
     ansible.extra_vars = {
        user: {
             name: "www-data",
