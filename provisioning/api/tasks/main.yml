@@ -1,0 +1,45 @@
+---
+- name: Clone the code repository to the docroot.
+  git:
+    repo: "https://bitbucket.org/m_baranov/test-app.git"
+    dest: "{{ user.home }}/api"
+    force: True
+  become: yes
+  become_user: "{{ user.name }}"
+
+
+- name: Install virtualenv via pip
+  pip:
+    name: virtualenv
+    executable: pip3
+  become: yes
+  become_user: root
+
+- name: Install requirements
+  pip: 
+     requirements: "{{ user.home }}/api/app/requirements.txt"
+     virtualenv: "{{ user.home }}/venv/"
+     virtualenv_python: "{{ user.home }}/.pyenv/versions/{{ pyenv.version }}/bin/python"
+
+- name: Add api upstart cofig
+  template: src=api.j2 dest="/etc/init/api.conf" 
+  notify:
+    - api restart
+  become: yes
+  become_user: root
+
+- name: Add uWSGI cofig
+  template: src=uwsgi.j2 dest="{{ user.home}}/api/uwsgi.ini" owner={{ user.name }} group={{ user.name }}
+  notify:
+    - api restart
+
+- name: Add app cofig
+  template: src=app_config.j2 dest="{{ user.home}}/api/app/config.py" owner={{ user.name }} group={{ user.name }}
+  notify:
+    - api restart
+
+- name: Apply migrations
+  shell: "cd {{ user.home }}/api/app && . {{ user.home }}/venv/bin/activate  && FLASK_APP=app.py flask db upgrade"
+  become: yes
+  become_user: "{{ user.name }}"
+ 

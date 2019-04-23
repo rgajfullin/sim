@@ -1,0 +1,8 @@
+---
+- include_tasks: sync/local.yml
+  when: pyenv.local_pull|default(False)|bool
+
+- include_tasks: sync/remote.yml
+  when: not pyenv.local_pull|default(False)|bool
+
+- include_tasks: python.yml

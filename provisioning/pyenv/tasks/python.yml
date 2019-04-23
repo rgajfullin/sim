@@ -1,0 +1,13 @@
+---
+- block:
+  - name: install python in pyenv
+    command: "{{ user.home }}/.pyenv/bin/pyenv install {{ pyenv.version }}"
+  
+  - name: set python version to global
+    command: "{{ user.home }}/.pyenv/bin/pyenv global {{ pyenv.version }}"
+
+  become: yes 
+  become_user: "{{ user.name }}"
+  environment:
+    PYENV_ROOT: "{{ user.home }}/.pyenv"
+  when: not pyenv_version_stat.stat.exists

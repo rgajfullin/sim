@@ -1,0 +1,13 @@
+description "uwsgi api instance"
+start on runlevel [2345]
+stop on runlevel [06]
+setuid {{ user.name }}
+setgid {{ user.group }}
+respawn
+
+script
+        chdir {{ user.home }}/api/app
+        echo $$ > /tmp/api.pid
+        exec {{ user.home }}/venv/bin/uwsgi -H {{ user.home }}/venv/ --ini {{ user.home }}/api/uwsgi.ini
+end script
+

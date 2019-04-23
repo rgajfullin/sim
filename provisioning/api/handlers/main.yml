@@ -1,0 +1,4 @@
+---
+- name: api restart
+  service: name=api state=restarted
+      

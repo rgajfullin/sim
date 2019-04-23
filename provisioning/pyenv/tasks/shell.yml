@@ -1,0 +1,67 @@
+---
+- name: set shell.init variable
+  set_fact:
+    shell:
+      init: "{{ user.home }}/.bashrc"
+  when:
+  - ansible_distribution in ['Debian', 'Ubuntu']
+  - user.shell|basename == 'bash'
+
+- name: set shell.init variable
+  set_fact:
+    shell:
+      init: "{{ user.home }}/.bash_profile"
+  when:
+  - ansible_distribution in ['CentOS', 'OracleLinux', 'RedHat']
+  - user.shell|basename == 'bash'
+
+- block:
+  - name: delete old PATH with PYENV from user bash init file
+    lineinfile:
+      path: "{{ shell.init }}"
+      regexp: 'export PATH="\$PYENV_ROOT/bin:\$PATH"'
+      state: absent
+  
+  - name: delete old PYENV_ROOT from user bash init file
+    lineinfile:
+      path: "{{ shell.init }}"
+      regexp: 'export PYENV_ROOT'
+      state: absent
+  
+  - name: delete old pyenv init block from user bash init file
+    blockinfile:
+      path: "{{ shell.init }}"
+      block: >
+        if command -v pyenv 1>/dev/null 2>&1; then
+            eval "$(pyenv init -)"
+        fi  
+      state: absent
+  
+  - name: add PYENV_ROOT in user bash init file
+    lineinfile:
+      path: "{{ shell.init }}"
+      line: 'export PYENV_ROOT="$HOME/.pyenv"'
+      firstmatch: yes
+      insertbefore: '^export WORKON_HOME=.*'
+      state: present
+  
+  - name: add PYENV PATH in user bash init file
+    lineinfile:
+      path: "{{ shell.init }}"
+      line: 'export PATH="$PYENV_ROOT/bin:$PATH"'
+      firstmatch: yes
+      insertbefore: '^export WORKON_HOME=.*'
+      state: present
+  
+  - name: add PYENV_ROOT in user bash init file
+    blockinfile:
+      path: "{{ shell.init }}"
+      block: >
+        if command -v pyenv 1>/dev/null 2>&1; then
+            eval "$(pyenv init -)"
+        fi  
+      insertbefore: '^export WORKON_HOME=.*'
+      state: present
+
+  become: yes
+  become_user: "{{ user.name }}"

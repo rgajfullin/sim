@@ -1,0 +1,102 @@
+---
+# local tasks block
+- block:
+  - name: create files directory
+    file:
+      path: files
+      state: directory
+  
+  - name: clone pyenv repo
+    git:
+      repo: https://github.com/pyenv/pyenv.git
+      dest: files/pyenv
+      accept_hostkey: yes
+      update: yes
+      archive: artifacts.tar.gz
+  
+  - name: clone pyenv-virtualenvwrapper repo
+    git:
+      repo: https://github.com/pyenv/pyenv-virtualenvwrapper.git
+      dest: files/pyenv-virtualenvwrapper
+      accept_hostkey: yes
+      update: yes
+      archive: artifacts.tar.gz
+
+  - name: download python sources
+    get_url:
+      url: "https://www.python.org/ftp/python/{{ pyenv.version }}/Python-{{ pyenv.version }}.tar.xz"
+      dest: "files/Python-{{ pyenv.version }}.tar.xz"
+
+  connection: local
+  run_once: yes
+
+# pyenv install tasks block
+- block:
+  - name: create pyenv root
+    file:
+      path: "{{ user.home }}/.pyenv"
+      state: directory
+      owner: "{{ user.name }}"
+      group: "{{ user.group }}"
+
+  - name: collect files and dir names in pyenv root
+    find:
+      paths: "{{ user.home }}/.pyenv"
+      file_type: any
+    register: pyenv_root_files_list
+
+  - name: cleanup pyenv root
+    file:
+      path: "{{ item }}"
+      state: absent
+    when: item|basename != 'versions'
+    with_items: "{{ pyenv_root_files_list.files|map(attribute='path')|list }}"
+
+  - name: copy pyenv to remote
+    unarchive:
+      src: files/pyenv/artifacts.tar.gz
+      dest: "{{ user.home }}/.pyenv"
+      owner: "{{ user.name }}"
+      group: "{{ user.group }}"
+
+  - name: remove old pyenv-virtualenvwrapper plugin
+    file:
+      path: "{{ user.home }}/.pyenv/plugins/pyenv-virtualenvwrapper"
+      state: absent
+      
+  - name: create pyenv-virtualenvwrapper plugin dir
+    file:
+      path: "{{ user.home }}/.pyenv/plugins/pyenv-virtualenvwrapper"
+      state: directory
+      owner: "{{ user.name }}"
+      group: "{{ user.group }}"
+
+  - name: copy pyenv-virtualenvwrapper plugin to remote
+    unarchive:
+      src: files/pyenv-virtualenvwrapper/artifacts.tar.gz
+      dest: "{{ user.home }}/.pyenv/plugins/pyenv-virtualenvwrapper"
+      owner: "{{ user.name }}"
+      group: "{{ user.group }}"
+
+  - name: check pyenv python version installed
+    stat:
+      path: "{{ user.home }}/.pyenv/versions/{{ pyenv.version }}"
+    register: pyenv_version_stat
+
+  - name: create pyenv cache dir
+    file:
+      path: "{{ user.home }}/.pyenv/cache"
+      state: directory
+      owner: "{{ user.name }}"
+      group: "{{ user.group }}"
+    when: not pyenv_version_stat.stat.exists
+
+  - name: copy python sources to remote
+    copy:
+      src: "files/Python-{{ pyenv.version }}.tar.xz"
+      dest: "{{ user.home }}/.pyenv/cache/Python-{{ pyenv.version }}.tar.xz"
+      owner: "{{ user.name }}"
+      group: "{{ user.group }}"
+    when: not pyenv_version_stat.stat.exists
+
+  become: yes

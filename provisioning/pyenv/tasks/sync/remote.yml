@@ -1,0 +1,24 @@
+---
+- block:
+  - name: clone pyenv repo
+    git:
+      repo: https://github.com/pyenv/pyenv.git
+      dest: "{{ user.home }}/.pyenv"
+      accept_hostkey: yes
+      update: yes
+      force: yes
+ 
+  - name: clone pyenv-virtualenvwrapper
+    git:
+      repo: https://github.com/pyenv/pyenv-virtualenvwrapper.git
+      dest: "{{ user.home }}/.pyenv/plugins/pyenv-virtualenvwrapper"
+      accept_hostkey: yes
+      update: yes
+
+  - name: check pyenv python version installed
+    stat:
+      path: "{{ user.home }}/.pyenv/versions/{{ pyenv.version }}"
+    register: pyenv_version_stat
+
+  become: yes
+  become_user: "{{ user.name }}"

@@ -1,0 +1,27 @@
+---
+- name: ensure apt cache is up to date
+  apt: update_cache=yes
+
+- name: ensure packages are installed
+  apt: name={{item}}
+  with_items:
+      - nginx
+  register: nginxinstalled
+  notify:
+    - nginx start
+
+- name: Add NGINX cofig
+  when: nginxinstalled|success
+  template: src=nginx.j2 dest=/etc/nginx/conf.d/api.conf owner={{ user.name }} group={{ user.name }}
+  notify:
+    - nginx restart
+
+- name: create user for application
+  user:
+      name: "{{ user.name }}"
+      group: "{{ user.group }}"
+      create_home: yes 
+      home: "{{ user.home }}"
+      shell: "{{ user.shell }}"
+      skeleton: /etc/skel
+      state: present

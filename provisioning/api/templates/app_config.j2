@@ -1,0 +1,12 @@
+import os
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+
+class Config(object):
+    DEVELOPMENT = True
+    DEBUG = True
+
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'ohpith6Z'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://{{ dbuser.name }}:{{ dbuser.password }}@192.168.50.50/{{ db.name }}'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+

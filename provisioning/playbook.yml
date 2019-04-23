@@ -1,0 +1,14 @@
+---
+- hosts: db
+  sudo: yes
+  roles:
+     - postgres
+
+- hosts: app 
+  sudo: yes
+  roles:
+    - packages
+    - nginx
+    - pyenv
+    - api
+

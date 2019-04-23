@@ -1,0 +1,17 @@
+upstream api {
+    server unix:/tmp/api.sock;
+}
+
+server {
+    listen 8080;
+    server_tokens off;
+
+     location /api/ {
+         include uwsgi_params;
+         uwsgi_pass api;
+     }
+
+     location / {
+         root {{ user.home }}/api/app/static;
+     }
+}
